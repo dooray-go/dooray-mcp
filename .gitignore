@@ -3,3 +3,4 @@
 build/dooray.*
 dist/
 .mcp.json
+.dooray-token
