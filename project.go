@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	projectmodel "github.com/dooray-go/dooray-sdk/openapi/model/project"
 	"github.com/dooray-go/dooray-sdk/openapi/project"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -11,6 +14,90 @@ import (
 func ProjectTools(s *server.MCPServer, token *string) {
 	projectTools(s, token)
 	postTools(s, token)
+	createPostTool(s, token, project.NewDefaultProject().CreatePostContext)
+}
+
+func createPostTool(s *server.MCPServer, token *string, create func(context.Context, string, string, projectmodel.PostRequest) (*projectmodel.PostResponse, error)) {
+	tool := mcp.NewTool("dooray_project_post",
+		mcp.WithDescription("Create a Dooray project task (post). Creates a new task on every call."),
+		mcp.WithString("operation", mcp.Required(), mcp.Enum("create_post")),
+		mcp.WithString("projectId", mcp.Required(), mcp.Description("Single project ID from dooray_project")),
+		mcp.WithString("subject", mcp.Required(), mcp.Description("Task title")),
+		mcp.WithString("content", mcp.Required(), mcp.Description("Task body")),
+		mcp.WithString("mimeType", mcp.Enum("text/x-markdown", "text/html"), mcp.Description("Body format, default text/x-markdown")),
+		mcp.WithString("toMemberIds", mcp.Description("Assignee organizationMemberIds, comma separated")),
+		mcp.WithString("ccMemberIds", mcp.Description("CC organizationMemberIds, comma separated")),
+	)
+	s.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := request.GetArguments()
+		values := make(map[string]string)
+		for _, key := range []string{"operation", "projectId", "subject", "content", "mimeType", "toMemberIds", "ccMemberIds"} {
+			v, present := args[key]
+			required := key == "operation" || key == "projectId" || key == "subject" || key == "content"
+			if !present && !required {
+				continue
+			}
+			value, ok := v.(string)
+			if !ok || strings.TrimSpace(value) == "" {
+				return mcp.NewToolResultError(key + " must be a non-empty string"), nil
+			}
+			values[key] = value
+		}
+		if values["operation"] != "create_post" {
+			return mcp.NewToolResultError("operation must be create_post"), nil
+		}
+		projectID := values["projectId"]
+		if strings.ContainsAny(projectID, ",/\\?#% \t\r\n") || projectID == "." || projectID == ".." {
+			return mcp.NewToolResultError("projectId must be a single project ID"), nil
+		}
+		mimeType := values["mimeType"]
+		if mimeType == "" {
+			mimeType = "text/x-markdown"
+		}
+		if mimeType != "text/x-markdown" && mimeType != "text/html" {
+			return mcp.NewToolResultError("mimeType must be text/x-markdown or text/html"), nil
+		}
+		post := projectmodel.PostRequest{
+			Subject: values["subject"],
+			Body:    projectmodel.PostBody{MimeType: mimeType, Content: values["content"]},
+		}
+		users := projectmodel.PostUsers{}
+		for _, key := range []string{"toMemberIds", "ccMemberIds"} {
+			if values[key] == "" {
+				continue
+			}
+			var recipients []projectmodel.PostRecipient
+			for id := range strings.SplitSeq(values[key], ",") {
+				id = strings.TrimSpace(id)
+				if id == "" {
+					return mcp.NewToolResultError(key + " contains an empty member ID"), nil
+				}
+				recipients = append(recipients, projectmodel.PostRecipient{Type: "member", Member: &projectmodel.PostMember{OrganizationMemberID: id}})
+			}
+			if key == "toMemberIds" {
+				users.To = recipients
+			} else {
+				users.Cc = recipients
+			}
+		}
+		if len(users.To) > 0 || len(users.Cc) > 0 {
+			post.Users = &users
+		}
+		if token == nil || strings.TrimSpace(*token) == "" {
+			return mcp.NewToolResultError("Dooray token is required"), nil
+		}
+		res, err := create(ctx, *token, projectID, post)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to create task: %v", err)), nil
+		}
+		if res == nil {
+			return mcp.NewToolResultError("Dooray returned an empty response"), nil
+		}
+		if !res.Header.IsSuccessful {
+			return mcp.NewToolResultError(fmt.Sprintf("Dooray rejected task creation: %s", res.Header.ResultMessage)), nil
+		}
+		return mcp.NewToolResultText(res.RawJSON), nil
+	})
 }
 
 func projectTools(s *server.MCPServer, token *string) {

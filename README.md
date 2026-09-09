@@ -4,7 +4,7 @@
 
 Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도록 해 주는 **MCP (Model Context Protocol) 서버**입니다.
 
-자연어로 메신저를 보내고, 캘린더 일정을 조회·등록하고, 업무(프로젝트 포스트)를 검색하고, 멤버 정보를 찾을 수 있습니다.
+자연어로 메신저를 보내고, 캘린더 일정을 조회·등록하고, 업무(프로젝트 포스트)를 검색·등록하고, 멤버 정보를 찾을 수 있습니다.
 
 ## 주요 기능
 
@@ -18,6 +18,7 @@ Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도�
 | 계정 | 멤버 상세정보 조회 | `dooray_account_member` |
 | 프로젝트 | 참여 중인 프로젝트 조회 | `dooray_project` |
 | 프로젝트 | 업무(포스트) 검색 (담당자/상태/기한 필터) | `dooray_posts` |
+| 프로젝트 | 업무(포스트) 등록 | `dooray_project_post` |
 | 기타 | 현재 시각 조회 | `os` |
 
 반복 일정은 `daily / weekly / monthly / yearly` 주기, interval, 종료일, 요일/일자 지정까지 지원합니다.
@@ -125,6 +126,19 @@ claude mcp list
 claude "오늘 내 캘린더 일정을 알려줘"
 ```
 
+### Codex에서 사용하기 (로컬 빌드)
+
+저장소 루트에서 `go build -o dist/dooray-mcp .`로 빌드합니다. 같은 디렉터리의 `.dooray-token` 파일에 개인 토큰만 저장하세요. 이 파일은 Git에서 제외됩니다.
+
+아래 `/absolute/path/dooray_mcp`를 실제 저장소 경로로 바꿔 등록합니다.
+
+```bash
+codex mcp add dooray-local -- /bin/sh -c 'token=$(cat "/absolute/path/dooray_mcp/.dooray-token") || exit 1; exec "/absolute/path/dooray_mcp/dist/dooray-mcp" --token "$token"'
+codex mcp get dooray-local
+```
+
+Codex의 새 세션에서 도구를 사용합니다. 코드 변경 후 같은 경로에 다시 빌드하고 MCP 서버를 재시작하면 변경 사항이 적용됩니다.
+
 ## 사용 예시
 
 ### 메신저
@@ -175,6 +189,10 @@ Dooray-잘쓰자 프로젝트에서 내게 할당된 업무 중 이번 주 마�
 
 ```
 지난 30일간 생성된 내 업무를 상태별로 정리해 줘.
+```
+
+```
+Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들어줘. 본문은 "등록 기능 확인"으로 해줘.
 ```
 
 ## 도구 레퍼런스
@@ -261,6 +279,32 @@ Dooray-잘쓰자 프로젝트에서 내게 할당된 업무 중 이번 주 마�
 | createdAt / updatedAt / dueAt | 날짜 필터. `today`, `thisweek`, `prev-30d`, `next-7d`, 또는 ISO8601 구간 `~` 형식 |
 | order | 정렬: `postDueAt`, `postUpdatedAt`, `createdAt` (내림차순은 `-` 접두사) |
 
+### `dooray_project_post`
+
+지정한 프로젝트에 새 업무를 등록합니다. 프로젝트 ID는 `dooray_project`로, 담당자·참조자의 멤버 ID는 계정 조회 도구로 확인할 수 있습니다.
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `create_post` |
+| projectId | O | 등록할 프로젝트 ID 하나 |
+| subject | O | 업무 제목 |
+| content | O | 업무 본문 |
+| mimeType | X | `text/x-markdown` (기본값) / `text/html` |
+| toMemberIds | X | 담당자 organizationMemberId (쉼표 구분) |
+| ccMemberIds | X | 참조자 organizationMemberId (쉼표 구분) |
+
+```json
+{
+  "operation": "create_post",
+  "projectId": "1234567890",
+  "subject": "MCP 업무 등록 테스트",
+  "content": "등록 기능 확인",
+  "toMemberIds": "1111111111,2222222222"
+}
+```
+
+성공하면 생성된 업무 ID를 포함한 Dooray API 응답을 반환합니다.
+
 ### `os`
 
 | 파라미터 | 필수 | 설명 |
@@ -306,6 +350,15 @@ make clean       # dist/ 제거
 * **`token must be set!!` 로그 후 종료**: `--token` 인자가 지정되지 않았습니다. 설정 파일이나 CLI 인자를 확인하세요.
 * **Claude Desktop 에서 도구가 보이지 않음**: 설정 편집 후 Claude Desktop 을 완전히 종료했다가 다시 실행해야 합니다.
 * **일정 등록 시 시간 파싱 오류**: `startedAt`, `endedAt` 은 반드시 ISO 8601 형식이어야 합니다 (예: `2025-04-11T09:00:00+09:00`). 종일 일정은 `2025-04-11+09:00` 형태로 지정합니다.
+
+## 변경 이력
+
+### 2026-09-09 — `feature/create-project-task`
+
+- `dooray_project_post`로 업무 제목·본문·담당자·참조자를 지정해 등록할 수 있습니다.
+- SDK의 컨텍스트 지원 생성 API를 사용하고, 입력과 API 응답의 성공 여부를 검사합니다.
+- 외부 호출 없는 등록 테스트, Codex 로컬 등록 안내와 토큰 파일 Git 제외 규칙을 추가했습니다.
+- 검증: 전체 테스트·빌드·`go vet`, MCP 초기화·도구 목록 조회, 실제 프로젝트 조회 및 업무 등록 성공.
 
 ## 라이선스 / 기여
 

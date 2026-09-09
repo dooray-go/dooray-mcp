@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 	"testing"
 
+	projectmodel "github.com/dooray-go/dooray-sdk/openapi/model/project"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
@@ -19,7 +23,6 @@ func TestProjectToolsRegistration(t *testing.T) {
 
 	tools := s.ListTools()
 
-	// dooray_project 와 dooray_posts 두 개가 등록되어야 함
 	names := make(map[string]bool)
 	for name := range tools {
 		names[name] = true
@@ -30,6 +33,9 @@ func TestProjectToolsRegistration(t *testing.T) {
 	}
 	if !names["dooray_posts"] {
 		t.Error("dooray_posts tool not registered")
+	}
+	if !names["dooray_project_post"] {
+		t.Error("dooray_project_post tool not registered")
 	}
 }
 
@@ -262,8 +268,8 @@ func TestProjectToolCount(t *testing.T) {
 	ProjectTools(s, &token)
 
 	tools := s.ListTools()
-	if len(tools) != 2 {
-		t.Errorf("expected 2 project tools, got %d", len(tools))
+	if len(tools) != 3 {
+		t.Errorf("expected 3 project tools, got %d", len(tools))
 	}
 }
 
@@ -376,5 +382,137 @@ func TestPostsToolWithSortOptions(t *testing.T) {
 				t.Logf("handler returned expected error: %v", err)
 			}
 		})
+	}
+}
+
+func TestCreatePostPayload(t *testing.T) {
+	for _, withUsers := range []bool{false, true} {
+		t.Run(fmt.Sprint(withUsers), func(t *testing.T) {
+			s := newTestServer()
+			token := "test-token"
+			called := 0
+			ctx := t.Context()
+			createPostTool(s, &token, func(gotCtx context.Context, gotToken, projectID string, post projectmodel.PostRequest) (*projectmodel.PostResponse, error) {
+				called++
+				if gotCtx != ctx || gotToken != token || projectID != "12345" {
+					t.Errorf("incorrect request context/token/project")
+				}
+				if post.Subject != "Task title" || post.Body.Content != "**Task body**" {
+					t.Errorf("incorrect post: %+v", post)
+				}
+				if withUsers {
+					if post.Body.MimeType != "text/html" || post.Users == nil {
+						t.Fatalf("incorrect optional payload: %+v", post)
+					}
+					if len(post.Users.To) != 2 || post.Users.To[0].Type != "member" || post.Users.To[0].Member.OrganizationMemberID != "member1" || post.Users.To[1].Member.OrganizationMemberID != "member2" || len(post.Users.Cc) != 1 || post.Users.Cc[0].Member.OrganizationMemberID != "member3" {
+						t.Errorf("incorrect recipients: %+v", post.Users)
+					}
+				} else if post.Body.MimeType != "text/x-markdown" || post.Users != nil {
+					t.Errorf("incorrect defaults: %+v", post)
+				}
+				res := &projectmodel.PostResponse{RawJSON: `{"header":{"isSuccessful":true},"result":{"id":"task1"}}`}
+				res.Header.IsSuccessful = true
+				res.Result.ID = "task1"
+				return res, nil
+			})
+			args := createPostArguments()
+			if withUsers {
+				args["mimeType"] = "text/html"
+				args["toMemberIds"] = "member1, member2"
+				args["ccMemberIds"] = "member3"
+			}
+			result, err := s.ListTools()["dooray_project_post"].Handler(ctx, mcp.CallToolRequest{Params: mcp.CallToolParams{Arguments: args}})
+			if err != nil || result == nil || result.IsError || called != 1 {
+				t.Fatalf("creation failed: result=%+v err=%v calls=%d", result, err, called)
+			}
+			if result.Content[0].(mcp.TextContent).Text != `{"header":{"isSuccessful":true},"result":{"id":"task1"}}` {
+				t.Errorf("response not preserved: %+v", result)
+			}
+		})
+	}
+}
+
+func createPostArguments() map[string]any {
+	return map[string]any{"operation": "create_post", "projectId": "12345", "subject": "Task title", "content": "**Task body**"}
+}
+
+func TestCreatePostRejectsInvalidArgumentsWithoutCallingAPI(t *testing.T) {
+	cases := []struct {
+		name, key string
+		value     any
+		remove    bool
+	}{
+		{"missing operation", "operation", nil, true}, {"missing project", "projectId", nil, true},
+		{"missing subject", "subject", nil, true}, {"missing content", "content", nil, true},
+		{"wrong type", "subject", 12, false}, {"blank title", "subject", "  ", false},
+		{"unknown operation", "operation", "delete_post", false}, {"multiple projects", "projectId", "1,2", false},
+		{"path injection", "projectId", "1/../2", false}, {"encoded path", "projectId", "%2f", false},
+		{"bad mime", "mimeType", "application/json", false}, {"bad optional type", "toMemberIds", true, false},
+		{"empty member", "ccMemberIds", "1,,2", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := newTestServer()
+			token := "test-token"
+			createPostTool(s, &token, func(context.Context, string, string, projectmodel.PostRequest) (*projectmodel.PostResponse, error) {
+				t.Fatal("API must not be called")
+				return nil, nil
+			})
+			args := createPostArguments()
+			if tc.remove {
+				delete(args, tc.key)
+			} else {
+				args[tc.key] = tc.value
+			}
+			result, err := s.ListTools()["dooray_project_post"].Handler(t.Context(), mcp.CallToolRequest{Params: mcp.CallToolParams{Arguments: args}})
+			if err != nil || result == nil || !result.IsError {
+				t.Fatalf("expected tool error: %+v %v", result, err)
+			}
+			if !strings.Contains(result.Content[0].(mcp.TextContent).Text, tc.key) {
+				t.Errorf("error does not identify argument: %+v", result)
+			}
+		})
+	}
+}
+
+func TestCreatePostReportsAPIFailures(t *testing.T) {
+	rejected := &projectmodel.PostResponse{}
+	rejected.Header.ResultMessage = "permission denied"
+	cases := []struct {
+		name     string
+		response *projectmodel.PostResponse
+		err      error
+		message  string
+	}{
+		{"transport", nil, errors.New("network unavailable"), "network unavailable"},
+		{"rejected", rejected, nil, "permission denied"},
+		{"empty response", nil, nil, "empty response"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := newTestServer()
+			token := "test-token"
+			createPostTool(s, &token, func(context.Context, string, string, projectmodel.PostRequest) (*projectmodel.PostResponse, error) {
+				return tc.response, tc.err
+			})
+			result, err := s.ListTools()["dooray_project_post"].Handler(t.Context(), mcp.CallToolRequest{Params: mcp.CallToolParams{Arguments: createPostArguments()}})
+			if err != nil || result == nil || !result.IsError || !strings.Contains(result.Content[0].(mcp.TextContent).Text, tc.message) {
+				t.Fatalf("expected %q failure: %+v %v", tc.message, result, err)
+			}
+		})
+	}
+}
+
+func TestCreatePostRequiresToken(t *testing.T) {
+	for _, token := range []*string{nil, new(""), new(" ")} {
+		s := newTestServer()
+		createPostTool(s, token, func(context.Context, string, string, projectmodel.PostRequest) (*projectmodel.PostResponse, error) {
+			t.Fatal("API must not be called without a token")
+			return nil, nil
+		})
+		result, err := s.ListTools()["dooray_project_post"].Handler(t.Context(), mcp.CallToolRequest{Params: mcp.CallToolParams{Arguments: createPostArguments()}})
+		if err != nil || result == nil || !result.IsError || !strings.Contains(result.Content[0].(mcp.TextContent).Text, "token") {
+			t.Fatalf("expected missing token error: %+v %v", result, err)
+		}
 	}
 }
