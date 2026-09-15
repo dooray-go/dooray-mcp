@@ -4,7 +4,7 @@
 
 Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도록 해 주는 **MCP (Model Context Protocol) 서버**입니다.
 
-자연어로 메신저를 보내고, 캘린더 일정을 조회·등록하고, 업무(프로젝트 포스트)를 검색·등록하고, 멤버 정보를 찾을 수 있습니다.
+자연어로 메신저를 보내고, 캘린더 일정을 조회·등록·수정·삭제하고, 업무(프로젝트 포스트)를 검색·등록하고, 멤버 정보를 찾을 수 있습니다.
 
 ## 주요 기능
 
@@ -14,6 +14,8 @@ Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도�
 | 캘린더 | 내 캘린더 목록 조회 | `dooray_calendar_calendars` |
 | 캘린더 | 기간별 일정 조회 | `dooray_calendar_events` |
 | 캘린더 | 일정 등록 (종일/반복일정 지원) | `dooray_calendar_post_event` |
+| 캘린더 | 일정 수정 | `dooray_calendar_update_event` |
+| 캘린더 | 일정 삭제 | `dooray_calendar_delete_event` |
 | 계정 | 이름/userCode 로 멤버 검색 | `dooray_account_members` |
 | 계정 | 멤버 상세정보 조회 | `dooray_account_member` |
 | 프로젝트 | 참여 중인 프로젝트 조회 | `dooray_project` |
@@ -175,6 +177,16 @@ Codex의 새 세션에서 도구를 사용합니다. 코드 변경 후 같은 �
 매달 1일 오전 10시에 월간 리뷰 일정 등록, 올해 12월까지.
 ```
 
+### 일정 수정 / 삭제
+
+```
+내일 아침 수영 일정 제목을 "자유수영(변경)"으로 바꿔줘.
+```
+
+```
+방금 조회한 스크럼 일정만 삭제해줘.
+```
+
 ![img_1.png](img_1.png)
 
 ### 업무 / 프로젝트
@@ -238,6 +250,54 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 | recurrenceBymonth | X | 반복 월(1-12), 연간 반복용 |
 | recurrenceBymonthday | X | 반복 일(1-31), 월간/연간 반복용 |
 | recurrenceTimezoneName | X | 타임존 (기본 `Asia/Seoul`) |
+
+### `dooray_calendar_update_event`
+
+조회한 일정의 `calendar.id`와 `id`를 사용해 지정한 필드만 수정합니다. 생략한 필드는 유지됩니다.
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `update_event` |
+| calendarId | O | 대상 캘린더 ID |
+| eventId | O | 대상 일정 ID (조회 결과의 `id`) |
+| subject | X | 변경할 제목 |
+| content | X | 변경할 본문 (text/html) |
+| startedAt / endedAt | X | 변경할 시작·종료 시각 (ISO 8601) |
+| wholeDayFlag | X | 종일 일정 여부 |
+| location | X | 변경할 장소 |
+
+변경할 필드를 하나 이상 지정해야 합니다. 공식 API가 빈 값이 아닌 필드만 수정하므로 빈 문자열로 제목·본문·장소를 지우는 기능은 제공하지 않습니다. 반복 규칙 변경이나 반복 일정 전체 수정 범위는 지원하지 않습니다.
+
+```json
+{
+  "operation": "update_event",
+  "calendarId": "cal-123",
+  "eventId": "evt-456",
+  "subject": "자유수영(변경)"
+}
+```
+
+### `dooray_calendar_delete_event`
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `delete_event` |
+| calendarId | O | 대상 캘린더 ID |
+| eventId | O | 대상 일정 ID (반복 일정은 조회된 회차 ID) |
+| deleteType | O | `this`: 해당 일정만, `wholeFromThis`: 해당 회차와 이후 반복 일정, `whole`: 반복 일정 전체 |
+
+일반 단건 일정은 `deleteType: "this"`로 삭제합니다. 반복 일정의 회차 ID에는 날짜 접미사가 포함될 수 있으므로 조회된 ID를 그대로 사용합니다.
+
+```json
+{
+  "operation": "delete_event",
+  "calendarId": "cal-123",
+  "eventId": "evt-456",
+  "deleteType": "this"
+}
+```
+
+수정·삭제 API의 근거: [Dooray 공식 서비스 API](https://helpdesk.dooray.com/share/pages/9wWo-xwiR66BO5LGshgVTg/2939987647631384419). `dooray-sdk` v0.6.0의 `UpdateEventContext`(PUT) / `DeleteEventContext`(POST `.../events/{eventId}/delete`)를 사용합니다.
 
 ### `dooray_account_members` / `dooray_account_member`
 
@@ -315,7 +375,7 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 
 ### 의존성
 
-* [github.com/dooray-go/dooray](https://github.com/dooray-go/dooray) — Dooray OpenAPI Go 클라이언트
+* [github.com/dooray-go/dooray-sdk](https://github.com/dooray-go/dooray-sdk) — Dooray OpenAPI Go 클라이언트 (v0.6.0)
 * [github.com/mark3labs/mcp-go](https://github.com/mark3labs/mcp-go) — MCP 서버 SDK
 
 ### 디렉터리 구조
@@ -325,7 +385,8 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 ├── main.go             # MCP 서버 초기화 및 도구 등록
 ├── os.go               # 시간 관련 도구
 ├── account.go          # 멤버 조회 도구
-├── calendar.go         # 캘린더/일정 도구 (반복 일정 포함)
+├── calendar.go              # 캘린더/일정 조회·등록 도구 (반복 일정 포함)
+├── calendar_mutations.go    # 일정 수정·삭제 도구
 ├── messenger.go        # 메신저 DM 도구
 ├── project.go          # 프로젝트/업무 도구
 ├── Makefile            # 크로스 컴파일 빌드 스크립트
@@ -352,6 +413,14 @@ make clean       # dist/ 제거
 * **일정 등록 시 시간 파싱 오류**: `startedAt`, `endedAt` 은 반드시 ISO 8601 형식이어야 합니다 (예: `2025-04-11T09:00:00+09:00`). 종일 일정은 `2025-04-11+09:00` 형태로 지정합니다.
 
 ## 변경 이력
+
+### 2026-09-15 — `feature/calendar-update-delete`
+
+- `dooray_calendar_update_event`로 제목·본문·시간·종일 여부·장소를 지정한 필드만 수정합니다. 생략한 필드는 유지됩니다.
+- `dooray_calendar_delete_event`로 일정을 삭제합니다. `deleteType`은 `this` / `wholeFromThis` / `whole`입니다. 단건도 `this`가 필요합니다.
+- `dooray-sdk`를 v0.4.1에서 v0.6.0으로 올렸습니다. 일정 수정·삭제는 v0.6.0 API를 쓰고, v0.5.0의 `GetPosts` `parent.number`(int) 수정도 함께 들어갑니다.
+- 빈 문자열로 제목·본문·장소를 지울 수 없고, 반복 규칙·참석자 변경은 지원하지 않습니다. 반복 회차 ID는 조회된 값을 그대로 씁니다.
+- 검증: 단위 테스트, 실제 Dooray 일정 등록→수정→삭제, 하위 업무가 포함된 `dooray_posts` 조회.
 
 ### 2026-09-09 — `feature/create-project-task`
 
