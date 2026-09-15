@@ -246,4 +246,7 @@ func CalendarTools(s *server.MCPServer, token *string) {
 
 		return mcp.NewToolResultText(fmt.Sprintf("%s", result.RawJSON)), nil
 	})
+
+	cal := calendar.NewDefaultCalendar()
+	calendarMutationTools(s, token, cal.UpdateEventContext, cal.DeleteEventContext)
 }
