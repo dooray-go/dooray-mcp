@@ -6,6 +6,8 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
+const mcpVersion = "1.3.0"
+
 func main() {
 	token := flag.String("token", "", "개인설정 > API > 개인 인증 토큰 메뉴에서 생성할 수 있습니다.")
 	flag.Parse()
@@ -18,7 +20,7 @@ func main() {
 	// Create a new MCP server
 	s := server.NewMCPServer(
 		"dooray",
-		"1.0.0",
+		mcpVersion,
 		server.WithResourceCapabilities(true, true),
 		server.WithLogging(),
 	)

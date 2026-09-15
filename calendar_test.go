@@ -14,7 +14,7 @@ func TestCalendarToolsRegistration(t *testing.T) {
 
 	tools := s.ListTools()
 
-	expected := []string{"dooray_calendar_calendars", "dooray_calendar_events", "dooray_calendar_post_event"}
+	expected := []string{"dooray_calendar_calendars", "dooray_calendar_events", "dooray_calendar_post_event", "dooray_calendar_update_event", "dooray_calendar_delete_event"}
 	for _, name := range expected {
 		if _, ok := tools[name]; !ok {
 			t.Errorf("%s tool not registered", name)
@@ -188,7 +188,7 @@ func TestCalendarToolCount(t *testing.T) {
 	CalendarTools(s, &token)
 
 	tools := s.ListTools()
-	expected := []string{"dooray_calendar_calendars", "dooray_calendar_events", "dooray_calendar_post_event"}
+	expected := []string{"dooray_calendar_calendars", "dooray_calendar_events", "dooray_calendar_post_event", "dooray_calendar_update_event", "dooray_calendar_delete_event"}
 	if len(tools) != len(expected) {
 		t.Errorf("expected %d calendar tools, got %d", len(expected), len(tools))
 	}
