@@ -439,6 +439,10 @@ make clean       # dist/ 제거
 
 ## 변경 이력
 
+### 2026-09-15 — `release/v1.4.0`
+
+- MCP initialize 서버 버전을 `1.4.0`으로 올렸습니다.
+
 ### 2026-09-15 — `feature/get-post-tool`
 
 - `dooray_post`로 업무 한 건을 조회합니다. 본문과 첨부 파일이 포함됩니다.
