@@ -15,6 +15,7 @@ func ProjectTools(s *server.MCPServer, token *string) {
 	projectTools(s, token)
 	postTools(s, token)
 	createPostTool(s, token, project.NewDefaultProject().CreatePostContext)
+	getPostTool(s, token, project.NewDefaultProject().GetPostContext)
 }
 
 func createPostTool(s *server.MCPServer, token *string, create func(context.Context, string, string, projectmodel.PostRequest) (*projectmodel.PostResponse, error)) {
@@ -95,6 +96,53 @@ func createPostTool(s *server.MCPServer, token *string, create func(context.Cont
 		}
 		if !res.Header.IsSuccessful {
 			return mcp.NewToolResultError(fmt.Sprintf("Dooray rejected task creation: %s", res.Header.ResultMessage)), nil
+		}
+		return mcp.NewToolResultText(res.RawJSON), nil
+	})
+}
+
+func getPostTool(s *server.MCPServer, token *string, get func(context.Context, string, string, string) (*projectmodel.GetPostResponse, error)) {
+	tool := mcp.NewTool("dooray_post",
+		mcp.WithDescription("Get a single Dooray project task (post), including body and files. Use dooray_posts to search, then pass the post id from the result or from a Dooray task URL."),
+		mcp.WithString("operation", mcp.Required(), mcp.Enum("get_post")),
+		mcp.WithString("projectId", mcp.Required(), mcp.Description("Single project ID from dooray_project or a Dooray task URL")),
+		mcp.WithString("postId", mcp.Required(), mcp.Description("Task ID from dooray_posts or the second ID in a Dooray task URL")),
+	)
+	s.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := request.GetArguments()
+		values := make(map[string]string)
+		for _, key := range []string{"operation", "projectId", "postId"} {
+			v, ok := args[key]
+			if !ok {
+				return mcp.NewToolResultError(key + " must be a non-empty string"), nil
+			}
+			value, ok := v.(string)
+			if !ok || strings.TrimSpace(value) == "" {
+				return mcp.NewToolResultError(key + " must be a non-empty string"), nil
+			}
+			values[key] = value
+		}
+		if values["operation"] != "get_post" {
+			return mcp.NewToolResultError("operation must be get_post"), nil
+		}
+		for _, key := range []string{"projectId", "postId"} {
+			id := values[key]
+			if strings.ContainsAny(id, ",/\\?#% \t\r\n") || id == "." || id == ".." {
+				return mcp.NewToolResultError(key + " must be a single ID"), nil
+			}
+		}
+		if token == nil || strings.TrimSpace(*token) == "" {
+			return mcp.NewToolResultError("Dooray token is required"), nil
+		}
+		res, err := get(ctx, *token, values["projectId"], values["postId"])
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to get task: %v", err)), nil
+		}
+		if res == nil {
+			return mcp.NewToolResultError("Dooray returned an empty response"), nil
+		}
+		if !res.Header.IsSuccessful {
+			return mcp.NewToolResultError(fmt.Sprintf("Dooray rejected task lookup: %s", res.Header.ResultMessage)), nil
 		}
 		return mcp.NewToolResultText(res.RawJSON), nil
 	})

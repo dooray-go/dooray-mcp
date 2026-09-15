@@ -4,7 +4,7 @@
 
 Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도록 해 주는 **MCP (Model Context Protocol) 서버**입니다.
 
-자연어로 메신저를 보내고, 캘린더 일정을 조회·등록·수정·삭제하고, 업무(프로젝트 포스트)를 검색·등록하고, 멤버 정보를 찾을 수 있습니다.
+자연어로 메신저를 보내고, 캘린더 일정을 조회·등록·수정·삭제하고, 업무(프로젝트 포스트)를 검색·단건 조회·등록하고, 멤버 정보를 찾을 수 있습니다.
 
 ## 주요 기능
 
@@ -20,6 +20,7 @@ Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도�
 | 계정 | 멤버 상세정보 조회 | `dooray_account_member` |
 | 프로젝트 | 참여 중인 프로젝트 조회 | `dooray_project` |
 | 프로젝트 | 업무(포스트) 검색 (담당자/상태/기한 필터) | `dooray_posts` |
+| 프로젝트 | 업무(포스트) 단건 조회 (본문·첨부 포함) | `dooray_post` |
 | 프로젝트 | 업무(포스트) 등록 | `dooray_project_post` |
 | 기타 | 현재 시각 조회 | `os` |
 
@@ -207,6 +208,10 @@ Dooray-잘쓰자 프로젝트에서 내게 할당된 업무 중 이번 주 마�
 Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들어줘. 본문은 "등록 기능 확인"으로 해줘.
 ```
 
+```
+이 업무 본문 보여줘. https://nhnent.dooray.com/task/3787724725029315943/4413565643388656467
+```
+
 ## 도구 레퍼런스
 
 ### `dooray_messenger`
@@ -339,6 +344,26 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 | createdAt / updatedAt / dueAt | 날짜 필터. `today`, `thisweek`, `prev-30d`, `next-7d`, 또는 ISO8601 구간 `~` 형식 |
 | order | 정렬: `postDueAt`, `postUpdatedAt`, `createdAt` (내림차순은 `-` 접두사) |
 
+### `dooray_post`
+
+업무 한 건의 상세(본문·첨부 포함)를 조회합니다. `dooray_posts` 결과의 `id` 또는 Dooray 업무 URL의 두 번째 ID를 `postId`로 넘깁니다.
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `get_post` |
+| projectId | O | 프로젝트 ID 하나 |
+| postId | O | 업무 ID 하나 |
+
+```json
+{
+  "operation": "get_post",
+  "projectId": "3787724725029315943",
+  "postId": "4413565643388656467"
+}
+```
+
+성공하면 본문(`body`)과 첨부(`files` / `fileIdList`)가 포함된 Dooray API 응답을 반환합니다.
+
 ### `dooray_project_post`
 
 지정한 프로젝트에 새 업무를 등록합니다. 프로젝트 ID는 `dooray_project`로, 담당자·참조자의 멤버 ID는 계정 조회 도구로 확인할 수 있습니다.
@@ -375,7 +400,7 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 
 ### 의존성
 
-* [github.com/dooray-go/dooray-sdk](https://github.com/dooray-go/dooray-sdk) — Dooray OpenAPI Go 클라이언트 (v0.6.0)
+* [github.com/dooray-go/dooray-sdk](https://github.com/dooray-go/dooray-sdk) — Dooray OpenAPI Go 클라이언트 (v0.7.0)
 * [github.com/mark3labs/mcp-go](https://github.com/mark3labs/mcp-go) — MCP 서버 SDK
 
 ### 디렉터리 구조
@@ -413,6 +438,16 @@ make clean       # dist/ 제거
 * **일정 등록 시 시간 파싱 오류**: `startedAt`, `endedAt` 은 반드시 ISO 8601 형식이어야 합니다 (예: `2025-04-11T09:00:00+09:00`). 종일 일정은 `2025-04-11+09:00` 형태로 지정합니다.
 
 ## 변경 이력
+
+### 2026-09-15 — `release/v1.4.0`
+
+- MCP initialize 서버 버전을 `1.4.0`으로 올렸습니다.
+
+### 2026-09-15 — `feature/get-post-tool`
+
+- `dooray_post`로 업무 한 건을 조회합니다. 본문과 첨부 파일이 포함됩니다.
+- `dooray-sdk`를 v0.7.0으로 올려 `GetPostContext`를 사용합니다.
+- 프로젝트 ID·업무 ID는 각각 하나만 받으며, 검색은 기존 `dooray_posts`를 그대로 씁니다.
 
 ### 2026-09-15 — `feature/bump-mcp-server-version`
 
