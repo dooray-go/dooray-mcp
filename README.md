@@ -414,6 +414,10 @@ make clean       # dist/ 제거
 
 ## 변경 이력
 
+### 2026-09-15 — `feature/bump-mcp-server-version`
+
+- MCP initialize에 광고하는 서버 버전을 `1.0.0`에서 `1.3.0`으로 올렸습니다. 일정 수정·삭제 도구가 포함된 다음 릴리스와 맞춥니다.
+
 ### 2026-09-15 — `feature/calendar-update-delete`
 
 - `dooray_calendar_update_event`로 제목·본문·시간·종일 여부·장소를 지정한 필드만 수정합니다. 생략한 필드는 유지됩니다.
