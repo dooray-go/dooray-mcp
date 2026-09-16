@@ -14,7 +14,7 @@ import (
 	"dooray_mcp/internal/wiki"
 )
 
-const mcpVersion = "1.4.0"
+const mcpVersion = "1.5.0-beta.1"
 
 func main() {
 	token := flag.String("token", "", "개인설정 > API > 개인 인증 토큰 메뉴에서 생성할 수 있습니다.")

@@ -1,5 +1,9 @@
 # Changelog
 
+### 2026-09-16 — `release/v1.5.0-beta.1`
+
+- MCP initialize 서버 버전을 `1.5.0-beta.1`로 올렸습니다. 위키 도구와 패키지 분리 범위가 커서 프리릴리스입니다.
+
 ### 2026-09-16 — `feature/wiki-tools`
 
 - `dooray-sdk` v0.8.0 위키 API로 위키 목록·페이지 목록·단건 조회·등록·수정을 추가했습니다.
