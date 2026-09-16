@@ -1,4 +1,4 @@
-package main
+package calendar
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 
 	model "github.com/dooray-go/dooray-sdk/openapi/model/calendar"
 	"github.com/mark3labs/mcp-go/mcp"
+
+	"dooray_mcp/internal/mcptest"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -67,7 +69,7 @@ func TestCalendarUpdatePayloadKeepsDateOnlyWithoutFlag(t *testing.T) {
 }
 
 func TestCalendarUpdateEventToolSubjectOnlyOmitsOtherFields(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
 	called := 0
 	calendarMutationTools(s, &token, func(_ context.Context, _, _, _ string, event model.UpdateEventRequest) (*model.EventResponse, error) {
@@ -87,7 +89,7 @@ func TestCalendarUpdateEventToolSubjectOnlyOmitsOtherFields(t *testing.T) {
 }
 
 func TestCalendarUpdateEventTool(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
 	ctx := t.Context()
 	called := 0
@@ -110,7 +112,7 @@ func TestCalendarUpdateEventTool(t *testing.T) {
 }
 
 func TestCalendarDeleteEventTool(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
 	ctx := t.Context()
 	called := 0
@@ -155,7 +157,7 @@ func TestCalendarUpdateEventRejectsInvalidArgumentsWithoutCallingAPI(t *testing.
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := newTestServer()
+			s := mcptest.NewServer()
 			token := "test-token"
 			calendarMutationTools(s, &token, refusingUpdate(t), refusingDelete(t))
 			args := updateEventArguments()
@@ -173,7 +175,7 @@ func TestCalendarUpdateEventRejectsInvalidArgumentsWithoutCallingAPI(t *testing.
 }
 
 func TestCalendarUpdateEventRequiresAField(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
 	calendarMutationTools(s, &token, refusingUpdate(t), refusingDelete(t))
 	args := map[string]any{"operation": "update_event", "calendarId": "cal-123", "eventId": "evt-456"}
@@ -196,7 +198,7 @@ func TestCalendarDeleteEventRejectsInvalidArgumentsWithoutCallingAPI(t *testing.
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := newTestServer()
+			s := mcptest.NewServer()
 			token := "test-token"
 			calendarMutationTools(s, &token, refusingUpdate(t), refusingDelete(t))
 			args := deleteEventArguments()
@@ -215,7 +217,7 @@ func TestCalendarDeleteEventRejectsInvalidArgumentsWithoutCallingAPI(t *testing.
 
 func TestCalendarMutationToolsRequireToken(t *testing.T) {
 	for _, token := range []*string{nil, new(""), new(" ")} {
-		s := newTestServer()
+		s := mcptest.NewServer()
 		calendarMutationTools(s, token, refusingUpdate(t), refusingDelete(t))
 		for _, tc := range []struct {
 			name string
@@ -247,7 +249,7 @@ func TestCalendarMutationToolsReportAPIFailures(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := newTestServer()
+			s := mcptest.NewServer()
 			token := "test-token"
 			fail := func(context.Context, string, string, string, model.UpdateEventRequest) (*model.EventResponse, error) {
 				return tc.response, tc.err

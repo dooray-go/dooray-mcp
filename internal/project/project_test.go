@@ -1,4 +1,4 @@
-package main
+package project
 
 import (
 	"context"
@@ -9,17 +9,14 @@ import (
 
 	projectmodel "github.com/dooray-go/dooray-sdk/openapi/model/project"
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
+
+	"dooray_mcp/internal/mcptest"
 )
 
-func newTestServer() *server.MCPServer {
-	return server.NewMCPServer("dooray-test", "1.0.0", server.WithToolCapabilities(true))
-}
-
 func TestProjectToolsRegistration(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 
@@ -43,9 +40,9 @@ func TestProjectToolsRegistration(t *testing.T) {
 }
 
 func TestProjectToolArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	tool, ok := tools["dooray_project"]
@@ -76,9 +73,9 @@ func TestProjectToolArguments(t *testing.T) {
 }
 
 func TestPostsToolArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	tool, ok := tools["dooray_posts"]
@@ -106,9 +103,9 @@ func TestPostsToolArguments(t *testing.T) {
 }
 
 func TestPostsToolWithAllOptions(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	tool, ok := tools["dooray_posts"]
@@ -154,9 +151,9 @@ func TestPostsToolWithAllOptions(t *testing.T) {
 }
 
 func TestPostsToolMissingRequiredArg(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	tool, ok := tools["dooray_posts"]
@@ -185,9 +182,9 @@ func TestPostsToolMissingRequiredArg(t *testing.T) {
 }
 
 func TestProjectToolMissingType(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_project"]
 
@@ -212,9 +209,9 @@ func TestProjectToolMissingType(t *testing.T) {
 }
 
 func TestProjectToolMissingState(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_project"]
 
@@ -239,9 +236,9 @@ func TestProjectToolMissingState(t *testing.T) {
 }
 
 func TestProjectToolMissingScope(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_project"]
 
@@ -266,9 +263,9 @@ func TestProjectToolMissingScope(t *testing.T) {
 }
 
 func TestProjectToolCount(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	if len(tools) != 4 {
@@ -277,9 +274,9 @@ func TestProjectToolCount(t *testing.T) {
 }
 
 func TestPostsToolWithPagingOnly(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_posts"]
 
@@ -304,9 +301,9 @@ func TestPostsToolWithPagingOnly(t *testing.T) {
 }
 
 func TestPostsToolWithDateFilters(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_posts"]
 
@@ -357,9 +354,9 @@ func TestPostsToolWithDateFilters(t *testing.T) {
 }
 
 func TestPostsToolWithSortOptions(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	ProjectTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_posts"]
 
@@ -391,7 +388,7 @@ func TestPostsToolWithSortOptions(t *testing.T) {
 func TestCreatePostPayload(t *testing.T) {
 	for _, withUsers := range []bool{false, true} {
 		t.Run(fmt.Sprint(withUsers), func(t *testing.T) {
-			s := newTestServer()
+			s := mcptest.NewServer()
 			token := "test-token"
 			called := 0
 			ctx := t.Context()
@@ -455,7 +452,7 @@ func TestCreatePostRejectsInvalidArgumentsWithoutCallingAPI(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := newTestServer()
+			s := mcptest.NewServer()
 			token := "test-token"
 			createPostTool(s, &token, func(context.Context, string, string, projectmodel.PostRequest) (*projectmodel.PostResponse, error) {
 				t.Fatal("API must not be called")
@@ -493,7 +490,7 @@ func TestCreatePostReportsAPIFailures(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := newTestServer()
+			s := mcptest.NewServer()
 			token := "test-token"
 			createPostTool(s, &token, func(context.Context, string, string, projectmodel.PostRequest) (*projectmodel.PostResponse, error) {
 				return tc.response, tc.err
@@ -508,7 +505,7 @@ func TestCreatePostReportsAPIFailures(t *testing.T) {
 
 func TestCreatePostRequiresToken(t *testing.T) {
 	for _, token := range []*string{nil, new(""), new(" ")} {
-		s := newTestServer()
+		s := mcptest.NewServer()
 		createPostTool(s, token, func(context.Context, string, string, projectmodel.PostRequest) (*projectmodel.PostResponse, error) {
 			t.Fatal("API must not be called without a token")
 			return nil, nil
@@ -525,7 +522,7 @@ func getPostArguments() map[string]any {
 }
 
 func TestGetPostReturnsRawJSON(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
 	called := 0
 	ctx := t.Context()
@@ -567,7 +564,7 @@ func TestGetPostRejectsInvalidArgumentsWithoutCallingAPI(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := newTestServer()
+			s := mcptest.NewServer()
 			token := "test-token"
 			getPostTool(s, &token, func(context.Context, string, string, string) (*projectmodel.GetPostResponse, error) {
 				t.Fatal("API must not be called")
@@ -605,7 +602,7 @@ func TestGetPostReportsAPIFailures(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := newTestServer()
+			s := mcptest.NewServer()
 			token := "test-token"
 			getPostTool(s, &token, func(context.Context, string, string, string) (*projectmodel.GetPostResponse, error) {
 				return tc.response, tc.err
@@ -620,7 +617,7 @@ func TestGetPostReportsAPIFailures(t *testing.T) {
 
 func TestGetPostRequiresToken(t *testing.T) {
 	for _, token := range []*string{nil, new(""), new(" ")} {
-		s := newTestServer()
+		s := mcptest.NewServer()
 		getPostTool(s, token, func(context.Context, string, string, string) (*projectmodel.GetPostResponse, error) {
 			t.Fatal("API must not be called without a token")
 			return nil, nil

@@ -3,7 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
+
 	"github.com/mark3labs/mcp-go/server"
+
+	"dooray_mcp/internal/account"
+	"dooray_mcp/internal/calendar"
+	"dooray_mcp/internal/messenger"
+	"dooray_mcp/internal/ostool"
+	"dooray_mcp/internal/project"
+	"dooray_mcp/internal/wiki"
 )
 
 const mcpVersion = "1.4.0"
@@ -17,7 +25,6 @@ func main() {
 		return
 	}
 
-	// Create a new MCP server
 	s := server.NewMCPServer(
 		"dooray",
 		mcpVersion,
@@ -25,17 +32,13 @@ func main() {
 		server.WithLogging(),
 	)
 
-	OsTools(s, token)
+	ostool.Tools(s, token)
+	messenger.Tools(s, token)
+	account.Tools(s, token)
+	calendar.Tools(s, token)
+	project.Tools(s, token)
+	wiki.Tools(s, token)
 
-	MessengerTools(s, token)
-
-	AccountTools(s, token)
-
-	CalendarTools(s, token)
-
-	ProjectTools(s, token)
-
-	// Start the server
 	if err := server.ServeStdio(s); err != nil {
 		fmt.Printf("Server error: %v\n", err)
 	}
