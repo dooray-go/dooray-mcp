@@ -1,5 +1,10 @@
 # Changelog
 
+### 2026-09-16 — `feature/document-tool-use-cases`
+
+- README에 캘린더·업무·메신저·위키 도구를 조합한 8가지 활용 시나리오를 추가했습니다.
+- 각 시나리오에 바로 사용할 수 있는 자연어 요청 예시와 도구 호출 흐름을 함께 안내합니다.
+
 ### 2026-09-16 — `release/v1.5.0-beta.2`
 
 - MCP initialize 서버 버전을 `1.5.0-beta.2`로 올렸습니다.
