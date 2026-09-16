@@ -1,16 +1,18 @@
-package main
+package messenger
 
 import (
 	"context"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
+
+	"dooray_mcp/internal/mcptest"
 )
 
 func TestMessengerToolsRegistration(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	MessengerTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	if _, ok := tools["dooray_messenger"]; !ok {
@@ -19,9 +21,9 @@ func TestMessengerToolsRegistration(t *testing.T) {
 }
 
 func TestMessengerSendArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	MessengerTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_messenger"]
 
@@ -45,9 +47,9 @@ func TestMessengerSendArguments(t *testing.T) {
 }
 
 func TestMessengerMissingTo(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	MessengerTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_messenger"]
 
@@ -71,9 +73,9 @@ func TestMessengerMissingTo(t *testing.T) {
 }
 
 func TestMessengerMissingMessage(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	MessengerTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_messenger"]
 
@@ -97,9 +99,9 @@ func TestMessengerMissingMessage(t *testing.T) {
 }
 
 func TestMessengerMissingAllArgs(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	MessengerTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_messenger"]
 
@@ -122,9 +124,9 @@ func TestMessengerMissingAllArgs(t *testing.T) {
 }
 
 func TestMessengerToolCount(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	MessengerTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	count := 0

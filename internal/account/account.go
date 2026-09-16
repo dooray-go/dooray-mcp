@@ -1,4 +1,4 @@
-package main
+package account
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func AccountTools(s *server.MCPServer, token *string) {
+func Tools(s *server.MCPServer, token *string) {
 	accountGetMembers := mcp.NewTool("dooray_account_members",
 		mcp.WithDescription("find dooray account members by name or userCode"),
 		mcp.WithString("operation",

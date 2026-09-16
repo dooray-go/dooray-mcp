@@ -1,4 +1,4 @@
-package main
+package ostool
 
 import (
 	"context"
@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
+
+	"dooray_mcp/internal/mcptest"
 )
 
 func TestOsToolsRegistration(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	OsTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	if _, ok := tools["os"]; !ok {
@@ -21,9 +23,9 @@ func TestOsToolsRegistration(t *testing.T) {
 }
 
 func TestOsGetDateTime(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	OsTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["os"]
 
@@ -68,9 +70,9 @@ func TestOsGetDateTime(t *testing.T) {
 }
 
 func TestOsMissingOperation(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	OsTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["os"]
 
@@ -91,9 +93,9 @@ func TestOsMissingOperation(t *testing.T) {
 }
 
 func TestOsGetDateTimeResultFormat(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	OsTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["os"]
 
@@ -139,9 +141,9 @@ func TestOsGetDateTimeResultFormat(t *testing.T) {
 }
 
 func TestOsToolCount(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	OsTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	if _, ok := tools["os"]; !ok {
@@ -150,9 +152,9 @@ func TestOsToolCount(t *testing.T) {
 }
 
 func TestOsGetDateTimeNilArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	OsTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["os"]
 

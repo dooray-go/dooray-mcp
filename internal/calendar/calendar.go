@@ -1,4 +1,4 @@
-package main
+package calendar
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func CalendarTools(s *server.MCPServer, token *string) {
+func Tools(s *server.MCPServer, token *string) {
 
 	calendarGetCalendars := mcp.NewTool("dooray_calendar_calendars",
 		mcp.WithDescription("find dooray calendars"),
