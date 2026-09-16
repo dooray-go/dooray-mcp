@@ -1,5 +1,10 @@
 # Changelog
 
+### 2026-09-16 — `release/v1.5.0-beta.2`
+
+- MCP initialize 서버 버전을 `1.5.0-beta.2`로 올렸습니다.
+- Wiki 댓글·첨부파일·공유 링크·페이지 관리 도구 14개를 추가해 Wiki 도구 총 19개를 제공합니다.
+
 ### 2026-09-16 — `feature/wiki-sdk-tools`
 
 - `dooray-sdk` v0.8.0의 기존 Wiki API를 연결해 MCP 도구 14개를 추가했습니다.
