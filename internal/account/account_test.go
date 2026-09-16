@@ -1,16 +1,18 @@
-package main
+package account
 
 import (
 	"context"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
+
+	"dooray_mcp/internal/mcptest"
 )
 
 func TestAccountToolsRegistration(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	AccountTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 
@@ -23,9 +25,9 @@ func TestAccountToolsRegistration(t *testing.T) {
 }
 
 func TestAccountGetMembersArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	AccountTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_account_members"]
 
@@ -49,9 +51,9 @@ func TestAccountGetMembersArguments(t *testing.T) {
 }
 
 func TestAccountGetMembersWithoutUserCode(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	AccountTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_account_members"]
 
@@ -75,9 +77,9 @@ func TestAccountGetMembersWithoutUserCode(t *testing.T) {
 }
 
 func TestAccountGetMemberArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	AccountTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_account_member"]
 
@@ -100,9 +102,9 @@ func TestAccountGetMemberArguments(t *testing.T) {
 }
 
 func TestAccountGetMemberMissingArg(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	AccountTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_account_member"]
 
@@ -125,9 +127,9 @@ func TestAccountGetMemberMissingArg(t *testing.T) {
 }
 
 func TestAccountGetMembersMissingMemberName(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	AccountTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_account_members"]
 
@@ -150,9 +152,9 @@ func TestAccountGetMembersMissingMemberName(t *testing.T) {
 }
 
 func TestAccountToolCount(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	AccountTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 
@@ -169,9 +171,9 @@ func TestAccountToolCount(t *testing.T) {
 }
 
 func TestAccountGetMembersWithUserCodeOnly(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	AccountTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_account_members"]
 

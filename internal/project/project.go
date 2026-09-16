@@ -1,4 +1,4 @@
-package main
+package project
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func ProjectTools(s *server.MCPServer, token *string) {
+func Tools(s *server.MCPServer, token *string) {
 	projectTools(s, token)
 	postTools(s, token)
 	createPostTool(s, token, project.NewDefaultProject().CreatePostContext)

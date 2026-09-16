@@ -4,7 +4,7 @@
 
 Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도록 해 주는 **MCP (Model Context Protocol) 서버**입니다.
 
-자연어로 메신저를 보내고, 캘린더 일정을 조회·등록·수정·삭제하고, 업무(프로젝트 포스트)를 검색·단건 조회·등록하고, 멤버 정보를 찾을 수 있습니다.
+자연어로 메신저를 보내고, 캘린더 일정을 조회·등록·수정·삭제하고, 업무(프로젝트 포스트)를 검색·단건 조회·등록하고, 위키를 조회·작성하고, 멤버 정보를 찾을 수 있습니다.
 
 ## 주요 기능
 
@@ -22,6 +22,11 @@ Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도�
 | 프로젝트 | 업무(포스트) 검색 (담당자/상태/기한 필터) | `dooray_posts` |
 | 프로젝트 | 업무(포스트) 단건 조회 (본문·첨부 포함) | `dooray_post` |
 | 프로젝트 | 업무(포스트) 등록 | `dooray_project_post` |
+| 위키 | 접근 가능한 위키 목록 | `dooray_wikis` |
+| 위키 | 페이지 목록 (한 단계) | `dooray_wiki_pages` |
+| 위키 | 페이지 본문 조회 | `dooray_wiki_page` |
+| 위키 | 페이지 등록 | `dooray_wiki_page_post` |
+| 위키 | 페이지 제목·본문 수정 | `dooray_wiki_page_update` |
 | 기타 | 현재 시각 조회 | `os` |
 
 반복 일정은 `daily / weekly / monthly / yearly` 주기, interval, 종료일, 요일/일자 지정까지 지원합니다.
@@ -52,7 +57,7 @@ git clone https://github.com/dooray-go/dooray_mcp.git
 cd dooray_mcp
 
 # 현재 플랫폼용 빌드
-go build -o dist/dooray-mcp .
+go build -o dist/dooray-mcp ./cmd/dooray-mcp
 
 # 또는 모든 플랫폼용 크로스 컴파일
 make build-all
@@ -131,7 +136,7 @@ claude "오늘 내 캘린더 일정을 알려줘"
 
 ### Codex에서 사용하기 (로컬 빌드)
 
-저장소 루트에서 `go build -o dist/dooray-mcp .`로 빌드합니다. 같은 디렉터리의 `.dooray-token` 파일에 개인 토큰만 저장하세요. 이 파일은 Git에서 제외됩니다.
+저장소 루트에서 `go build -o dist/dooray-mcp ./cmd/dooray-mcp`로 빌드합니다. 같은 디렉터리의 `.dooray-token` 파일에 개인 토큰만 저장하세요. 이 파일은 Git에서 제외됩니다.
 
 아래 `/absolute/path/dooray_mcp`를 실제 저장소 경로로 바꿔 등록합니다.
 
@@ -210,6 +215,20 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 
 ```
 이 업무 본문 보여줘. https://nhnent.dooray.com/task/3787724725029315943/4413565643388656467
+```
+
+### 위키
+
+```
+내가 볼 수 있는 위키 목록 보여줘.
+```
+
+```
+공지사항 위키 홈 페이지 본문 읽어줘.
+```
+
+```
+그 위키에 "MCP 위키 테스트" 페이지를 만들고 본문은 "등록 확인"으로 해줘.
 ```
 
 ## 도구 레퍼런스
@@ -390,6 +409,72 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 
 성공하면 생성된 업무 ID를 포함한 Dooray API 응답을 반환합니다.
 
+### `dooray_wikis`
+
+접근 가능한 위키 목록을 조회합니다. 홈 페이지 ID는 `result[].home.pageId`입니다.
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `find_wikis` |
+| page | X | 페이지 번호 (기본 0) |
+| size | X | 페이지 크기 |
+
+### `dooray_wiki_pages`
+
+위키 페이지를 한 단계만 나열합니다. `parentPageId`를 생략하면 루트 아래 페이지를 반환합니다.
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `find_pages` |
+| wikiId | O | 위키 ID (`dooray_wikis`) |
+| parentPageId | X | 부모 페이지 ID |
+
+### `dooray_wiki_page`
+
+페이지 본문·참조자·첨부·이미지를 조회합니다.
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `get_page` |
+| pageId | O | 페이지 ID |
+| wikiId | X | 위키 ID. 있으면 위키 스코프 API를 사용합니다 |
+
+```json
+{
+  "operation": "get_page",
+  "wikiId": "100",
+  "pageId": "1001"
+}
+```
+
+### `dooray_wiki_page_post`
+
+위키 페이지를 등록합니다.
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `create_page` |
+| wikiId | O | 위키 ID |
+| subject | O | 페이지 제목 |
+| content | O | 페이지 본문 |
+| parentPageId | X | 부모 페이지 ID |
+| mimeType | X | `text/x-markdown` (기본값) / `text/html` |
+
+### `dooray_wiki_page_update`
+
+제목·본문 중 보낸 필드만 수정합니다. 둘 다 보내면 전체 수정 API를 씁니다.
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `update_page` |
+| wikiId | O | 위키 ID |
+| pageId | O | 페이지 ID |
+| subject | X | 새 제목 |
+| content | X | 새 본문 |
+| mimeType | X | 본문 형식. content가 있을 때, 기본 `text/x-markdown` |
+
+댓글·파일 업로드/다운로드·페이지 이동·삭제는 이 버전에 포함하지 않습니다.
+
 ### `os`
 
 | 파라미터 | 필수 | 설명 |
@@ -400,22 +485,23 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 
 ### 의존성
 
-* [github.com/dooray-go/dooray-sdk](https://github.com/dooray-go/dooray-sdk) — Dooray OpenAPI Go 클라이언트 (v0.7.0)
+* [github.com/dooray-go/dooray-sdk](https://github.com/dooray-go/dooray-sdk) — Dooray OpenAPI Go 클라이언트 (v0.8.0)
 * [github.com/mark3labs/mcp-go](https://github.com/mark3labs/mcp-go) — MCP 서버 SDK
 
 ### 디렉터리 구조
 
 ```
 .
-├── main.go             # MCP 서버 초기화 및 도구 등록
-├── os.go               # 시간 관련 도구
-├── account.go          # 멤버 조회 도구
-├── calendar.go              # 캘린더/일정 조회·등록 도구 (반복 일정 포함)
-├── calendar_mutations.go    # 일정 수정·삭제 도구
-├── messenger.go        # 메신저 DM 도구
-├── project.go          # 프로젝트/업무 도구
-├── Makefile            # 크로스 컴파일 빌드 스크립트
-└── *_test.go           # 각 도구별 단위 테스트
+├── cmd/dooray-mcp/          # MCP 서버 진입점
+├── internal/account/        # 멤버 조회 도구
+├── internal/calendar/       # 캘린더 조회·등록·수정·삭제
+├── internal/messenger/      # 메신저 DM 도구
+├── internal/ostool/         # 현재 시각 도구 (`os`)
+├── internal/project/        # 프로젝트·업무 도구
+├── internal/wiki/           # 위키 목록·조회·등록·수정
+├── internal/mcptest/        # 테스트용 MCP 서버 헬퍼
+├── Makefile
+└── CHANGELOG.md
 ```
 
 ### 테스트
@@ -439,34 +525,7 @@ make clean       # dist/ 제거
 
 ## 변경 이력
 
-### 2026-09-15 — `release/v1.4.0`
-
-- MCP initialize 서버 버전을 `1.4.0`으로 올렸습니다.
-
-### 2026-09-15 — `feature/get-post-tool`
-
-- `dooray_post`로 업무 한 건을 조회합니다. 본문과 첨부 파일이 포함됩니다.
-- `dooray-sdk`를 v0.7.0으로 올려 `GetPostContext`를 사용합니다.
-- 프로젝트 ID·업무 ID는 각각 하나만 받으며, 검색은 기존 `dooray_posts`를 그대로 씁니다.
-
-### 2026-09-15 — `feature/bump-mcp-server-version`
-
-- MCP initialize에 광고하는 서버 버전을 `1.0.0`에서 `1.3.0`으로 올렸습니다. 일정 수정·삭제 도구가 포함된 다음 릴리스와 맞춥니다.
-
-### 2026-09-15 — `feature/calendar-update-delete`
-
-- `dooray_calendar_update_event`로 제목·본문·시간·종일 여부·장소를 지정한 필드만 수정합니다. 생략한 필드는 유지됩니다.
-- `dooray_calendar_delete_event`로 일정을 삭제합니다. `deleteType`은 `this` / `wholeFromThis` / `whole`입니다. 단건도 `this`가 필요합니다.
-- `dooray-sdk`를 v0.4.1에서 v0.6.0으로 올렸습니다. 일정 수정·삭제는 v0.6.0 API를 쓰고, v0.5.0의 `GetPosts` `parent.number`(int) 수정도 함께 들어갑니다.
-- 빈 문자열로 제목·본문·장소를 지울 수 없고, 반복 규칙·참석자 변경은 지원하지 않습니다. 반복 회차 ID는 조회된 값을 그대로 씁니다.
-- 검증: 단위 테스트, 실제 Dooray 일정 등록→수정→삭제, 하위 업무가 포함된 `dooray_posts` 조회.
-
-### 2026-09-09 — `feature/create-project-task`
-
-- `dooray_project_post`로 업무 제목·본문·담당자·참조자를 지정해 등록할 수 있습니다.
-- SDK의 컨텍스트 지원 생성 API를 사용하고, 입력과 API 응답의 성공 여부를 검사합니다.
-- 외부 호출 없는 등록 테스트, Codex 로컬 등록 안내와 토큰 파일 Git 제외 규칙을 추가했습니다.
-- 검증: 전체 테스트·빌드·`go vet`, MCP 초기화·도구 목록 조회, 실제 프로젝트 조회 및 업무 등록 성공.
+[CHANGELOG.md](CHANGELOG.md)
 
 ## 라이선스 / 기여
 

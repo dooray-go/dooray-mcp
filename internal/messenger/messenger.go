@@ -1,4 +1,4 @@
-package main
+package messenger
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func MessengerTools(s *server.MCPServer, token *string) {
+func Tools(s *server.MCPServer, token *string) {
 	doorayMessengerTool := mcp.NewTool("dooray_messenger",
 		mcp.WithDescription("send message to dooray messenger"),
 		mcp.WithString("operation",

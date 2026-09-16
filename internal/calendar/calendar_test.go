@@ -1,16 +1,18 @@
-package main
+package calendar
 
 import (
 	"context"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
+
+	"dooray_mcp/internal/mcptest"
 )
 
 func TestCalendarToolsRegistration(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 
@@ -23,9 +25,9 @@ func TestCalendarToolsRegistration(t *testing.T) {
 }
 
 func TestCalendarGetCalendarsArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_calendars"]
 
@@ -47,9 +49,9 @@ func TestCalendarGetCalendarsArguments(t *testing.T) {
 }
 
 func TestCalendarGetEventsArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_events"]
 
@@ -74,9 +76,9 @@ func TestCalendarGetEventsArguments(t *testing.T) {
 }
 
 func TestCalendarGetEventsWithoutOptionalCalendars(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_events"]
 
@@ -101,9 +103,9 @@ func TestCalendarGetEventsWithoutOptionalCalendars(t *testing.T) {
 }
 
 func TestCalendarGetEventsInvalidTimeFormat(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_events"]
 
@@ -127,9 +129,9 @@ func TestCalendarGetEventsInvalidTimeFormat(t *testing.T) {
 }
 
 func TestCalendarPostEventArguments(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_post_event"]
 
@@ -156,9 +158,9 @@ func TestCalendarPostEventArguments(t *testing.T) {
 }
 
 func TestCalendarPostEventWithoutOptionalFields(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_post_event"]
 
@@ -183,9 +185,9 @@ func TestCalendarPostEventWithoutOptionalFields(t *testing.T) {
 }
 
 func TestCalendarToolCount(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "test-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tools := s.ListTools()
 	expected := []string{"dooray_calendar_calendars", "dooray_calendar_events", "dooray_calendar_post_event", "dooray_calendar_update_event", "dooray_calendar_delete_event"}
@@ -195,9 +197,9 @@ func TestCalendarToolCount(t *testing.T) {
 }
 
 func TestCalendarGetEventsInvalidTimeMaxFormat(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_events"]
 
@@ -221,9 +223,9 @@ func TestCalendarGetEventsInvalidTimeMaxFormat(t *testing.T) {
 }
 
 func TestCalendarPostEventInvalidStartedAt(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_post_event"]
 
@@ -250,9 +252,9 @@ func TestCalendarPostEventInvalidStartedAt(t *testing.T) {
 }
 
 func TestCalendarPostEventInvalidEndedAt(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_post_event"]
 
@@ -279,9 +281,9 @@ func TestCalendarPostEventInvalidEndedAt(t *testing.T) {
 }
 
 func TestCalendarGetEventsBothTimesInvalid(t *testing.T) {
-	s := newTestServer()
+	s := mcptest.NewServer()
 	token := "invalid-token"
-	CalendarTools(s, &token)
+	Tools(s, &token)
 
 	tool := s.ListTools()["dooray_calendar_events"]
 

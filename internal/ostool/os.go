@@ -1,4 +1,4 @@
-package main
+package ostool
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func OsTools(s *server.MCPServer, token *string) {
+func Tools(s *server.MCPServer, token *string) {
 	osTool := mcp.NewTool("os",
 		mcp.WithDescription("get os time date"),
 		mcp.WithString("operation",

@@ -1,6 +1,10 @@
 *.iml
 .idea
+.DS_Store
 build/dooray.*
 dist/
+/dooray
+/dooray-mcp
+/dooray_mcp
 .mcp.json
 .dooray-token
