@@ -18,6 +18,8 @@ func wikiCreatePageTool(s *server.MCPServer, token *string, create func(context.
 		mcp.WithString("subject", mcp.Required(), mcp.Description("Page title")),
 		mcp.WithString("content", mcp.Required(), mcp.Description("Page body")),
 		mcp.WithString("parentPageId", mcp.Description("Parent page ID. Omit to create under the wiki root")),
+		mcp.WithArray("attachFileIds", mcp.WithStringItems(), mcp.Description("Attachment IDs returned by dooray_wiki_file_upload")),
+		mcp.WithArray("referrerMemberIds", mcp.WithStringItems(), mcp.Description("Organization member IDs to add as referrers")),
 		mcp.WithString("mimeType", mcp.Enum("text/x-markdown", "text/html"), mcp.Description("Body format, default text/x-markdown")),
 	)
 	s.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -54,7 +56,16 @@ func wikiCreatePageTool(s *server.MCPServer, token *string, create func(context.
 		if err := wikiRequireToken(token); err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
+		attachFileIDs, err := wikiIDArray(args, "attachFileIds", false)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		referrers, err := wikiReferrers(args, false)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 		req := wikimodel.CreatePageRequest{
+			AttachFileIDs: attachFileIDs, Referrers: referrers,
 			ParentPageID: parentPageID,
 			Subject:      subject,
 			Body:         wikimodel.Body{MimeType: mimeType, Content: content},
