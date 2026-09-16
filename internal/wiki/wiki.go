@@ -13,6 +13,20 @@ import (
 
 func Tools(s *server.MCPServer, token *string) {
 	client := wiki.NewDefaultWiki()
+	wikiCommentsTool(s, token, client.GetCommentsContext)
+	wikiCommentTool(s, token, client.GetCommentContext)
+	wikiCommentPostTool(s, token, client.CreateCommentContext)
+	wikiCommentUpdateTool(s, token, client.UpdateCommentContext)
+	wikiCommentDeleteTool(s, token, client.DeleteCommentContext)
+	wikiSharedLinksTool(s, token, client.GetSharedLinksContext)
+	wikiPageDeleteTool(s, token, client.DeletePageContext)
+	wikiPageMoveTool(s, token, client.MovePageContext)
+	wikiPageReferrersTool(s, token, client.UpdatePageReferrersContext)
+	wikiFileUploadTool(s, token, client.UploadWikiFileContext)
+	wikiPageFileUploadTool(s, token, client.UploadPageFileContext)
+	wikiAttachFileDownloadTool(s, token, client.DownloadAttachFileContext)
+	wikiPageFileDownloadTool(s, token, client.DownloadPageFileContext)
+	wikiPageFileDeleteTool(s, token, client.DeletePageFileContext)
 	wikiListTool(s, token, func(ctx context.Context, apikey string, page, size int) (*wikimodel.ListWikisResponse, error) {
 		return client.GetWikisCustomHTTPContext(ctx, apikey, nil, page, size)
 	})

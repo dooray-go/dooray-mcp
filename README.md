@@ -4,7 +4,7 @@
 
 Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도록 해 주는 **MCP (Model Context Protocol) 서버**입니다.
 
-자연어로 메신저를 보내고, 캘린더 일정을 조회·등록·수정·삭제하고, 업무(프로젝트 포스트)를 검색·단건 조회·등록하고, 위키를 조회·작성하고, 멤버 정보를 찾을 수 있습니다.
+자연어로 메신저를 보내고, 캘린더 일정을 조회·등록·수정·삭제하고, 업무(프로젝트 포스트)를 검색·단건 조회·등록하고, 위키 페이지·댓글·첨부파일을 관리하고, 멤버 정보를 찾을 수 있습니다.
 
 ## 주요 기능
 
@@ -27,6 +27,13 @@ Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도�
 | 위키 | 페이지 본문 조회 | `dooray_wiki_page` |
 | 위키 | 페이지 등록 | `dooray_wiki_page_post` |
 | 위키 | 페이지 제목·본문 수정 | `dooray_wiki_page_update` |
+| 위키 | 페이지 이동·삭제·참조자 변경 | `dooray_wiki_page_move`, `dooray_wiki_page_delete`, `dooray_wiki_page_referrers_update` |
+| 위키 | 댓글 목록·단건 조회 | `dooray_wiki_comments`, `dooray_wiki_comment` |
+| 위키 | 댓글 등록·수정·삭제 | `dooray_wiki_comment_post`, `dooray_wiki_comment_update`, `dooray_wiki_comment_delete` |
+| 위키 | 공유 링크 조회 | `dooray_wiki_shared_links` |
+| 위키 | 위키·페이지 파일 업로드 | `dooray_wiki_file_upload`, `dooray_wiki_page_file_upload` |
+| 위키 | 첨부파일 다운로드 | `dooray_wiki_attach_file_download`, `dooray_wiki_page_file_download` |
+| 위키 | 페이지 첨부파일 삭제 | `dooray_wiki_page_file_delete` |
 | 기타 | 현재 시각 조회 | `os` |
 
 반복 일정은 `daily / weekly / monthly / yearly` 주기, interval, 종료일, 요일/일자 지정까지 지원합니다.
@@ -229,6 +236,14 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 
 ```
 그 위키에 "MCP 위키 테스트" 페이지를 만들고 본문은 "등록 확인"으로 해줘.
+```
+
+```
+그 페이지의 댓글을 보여줘. 확인 후 "검토 완료했습니다" 댓글을 달아줘.
+```
+
+```
+그 페이지의 첨부파일 목록과 공유 링크를 보여줘.
 ```
 
 ## 도구 레퍼런스
@@ -459,6 +474,8 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 | content | O | 페이지 본문 |
 | parentPageId | X | 부모 페이지 ID |
 | mimeType | X | `text/x-markdown` (기본값) / `text/html` |
+| attachFileIds | X | 위키 파일 업로드로 얻은 첨부파일 ID의 문자열 배열 |
+| referrerMemberIds | X | 참조자의 organizationMemberId 문자열 배열 |
 
 ### `dooray_wiki_page_update`
 
@@ -473,7 +490,80 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 | content | X | 새 본문 |
 | mimeType | X | 본문 형식. content가 있을 때, 기본 `text/x-markdown` |
 
-댓글·파일 업로드/다운로드·페이지 이동·삭제는 이 버전에 포함하지 않습니다.
+### 위키 댓글
+
+모든 댓글 도구는 `operation`, `wikiId`, `pageId`가 필수입니다.
+
+| 도구 | operation | 추가 파라미터 |
+|------|-----------|---------------|
+| `dooray_wiki_comments` | `find_comments` | `page`, `size` (선택) |
+| `dooray_wiki_comment` | `get_comment` | `commentId` (필수) |
+| `dooray_wiki_comment_post` | `create_comment` | `content` (필수) |
+| `dooray_wiki_comment_update` | `update_comment` | `commentId`, `content` (필수) |
+| `dooray_wiki_comment_delete` | `delete_comment` | `commentId` (필수) |
+
+`page`는 0부터 시작하는 정수이고, `size`를 생략하면 Dooray API 기본값을 사용합니다. 댓글 등록·수정은 SDK의 댓글 본문 형식을 사용합니다.
+
+```json
+{
+  "operation": "create_comment",
+  "wikiId": "100",
+  "pageId": "1001",
+  "content": "검토 완료했습니다."
+}
+```
+
+### `dooray_wiki_shared_links`
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `find_shared_links` |
+| wikiId / pageId | O | 위키·페이지 ID |
+| page / size | X | 0부터 시작하는 페이지 번호 / 페이지 크기 |
+| valid | X | `true`: 유효한 링크, `false`: 유효하지 않은 링크. 생략하면 필터 없이 조회 |
+
+### 페이지 이동·삭제·참조자 변경
+
+세 도구 모두 `operation`, `wikiId`, `pageId`가 필수입니다.
+
+| 도구 | operation | 추가 파라미터 |
+|------|-----------|---------------|
+| `dooray_wiki_page_move` | `move_page` | `targetParentPageId` (필수), `targetWikiId`, `beforePageId`, `withChildren` (선택) |
+| `dooray_wiki_page_delete` | `delete_page` | 없음 |
+| `dooray_wiki_page_referrers_update` | `update_referrers` | `referrerMemberIds` (필수 문자열 배열) |
+
+이동할 부모 페이지 ID는 페이지 조회 결과에서 선택합니다. 다른 위키로 옮길 때 `targetWikiId`를 지정하고, `beforePageId`로 배치 순서를 지정할 수 있습니다. `withChildren`은 하위 페이지 포함 여부이며 생략하면 API 기본 동작을 따릅니다.
+
+참조자 변경은 기존 목록 전체를 교체합니다. `referrerMemberIds: []`로 모든 참조자를 제거할 수 있습니다.
+
+### 위키 첨부파일
+
+첨부파일 목록은 `dooray_wiki_page`의 `files`와 `images`에서 조회합니다. 모든 파일 도구는 `operation`, `wikiId`가 필수입니다.
+
+| 도구 | operation | 추가 필수 파라미터 |
+|------|-----------|--------------------|
+| `dooray_wiki_file_upload` | `upload_wiki_file` | `filename`, `contentBase64` |
+| `dooray_wiki_page_file_upload` | `upload_page_file` | `pageId`, `filename`, `contentBase64` |
+| `dooray_wiki_attach_file_download` | `download_attach_file` | `attachFileId` |
+| `dooray_wiki_page_file_download` | `download_page_file` | `pageId`, `fileId` |
+| `dooray_wiki_page_file_delete` | `delete_page_file` | `pageId`, `fileId` |
+
+업로드의 선택 파라미터 `fileType`은 `general` (기본값) 또는 `inline_image`입니다. `contentBase64`에는 파일 바이트를 표준 Base64로 인코딩한 문자열을 전달합니다. 서버의 로컬 파일 경로를 읽거나 쓰지 않습니다.
+
+위키에 먼저 업로드한 파일은 반환된 첨부파일 ID를 `dooray_wiki_page_post.attachFileIds`에 넣어 새 페이지에 연결합니다. 기존 페이지에는 `dooray_wiki_page_file_upload`를 사용합니다. `attachFileId`와 페이지의 `fileId`는 서로 다른 API의 식별자이므로 해당 응답의 ID를 사용하세요.
+
+다운로드 결과는 `contentBase64`, `contentType`, `statusCode`를 담은 JSON 텍스트입니다. 클라이언트에서 Base64를 디코딩하면 원본 파일 바이트를 얻습니다.
+
+```json
+{
+  "operation": "upload_page_file",
+  "wikiId": "100",
+  "pageId": "1001",
+  "filename": "hello.txt",
+  "contentBase64": "SGVsbG8=",
+  "fileType": "general"
+}
+```
 
 ### `os`
 
@@ -498,7 +588,7 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 ├── internal/messenger/      # 메신저 DM 도구
 ├── internal/ostool/         # 현재 시각 도구 (`os`)
 ├── internal/project/        # 프로젝트·업무 도구
-├── internal/wiki/           # 위키 목록·조회·등록·수정
+├── internal/wiki/           # 위키 페이지·댓글·첨부파일·공유 링크 도구
 ├── internal/mcptest/        # 테스트용 MCP 서버 헬퍼
 ├── Makefile
 └── CHANGELOG.md

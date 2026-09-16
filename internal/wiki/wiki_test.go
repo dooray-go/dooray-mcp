@@ -22,8 +22,8 @@ func TestWikiToolsRegistration(t *testing.T) {
 			t.Errorf("%s tool not registered", name)
 		}
 	}
-	if len(tools) != 5 {
-		t.Errorf("expected 5 wiki tools, got %d", len(tools))
+	if len(tools) != 19 {
+		t.Errorf("expected 19 wiki tools, got %d", len(tools))
 	}
 }
 
@@ -123,7 +123,7 @@ func TestWikiCreatePage(t *testing.T) {
 	token := "test-token"
 	ctx := t.Context()
 	wikiCreatePageTool(s, &token, func(_ context.Context, _, wikiID string, req wikimodel.CreatePageRequest) (*wikimodel.CreatePageResponse, error) {
-		if wikiID != "wiki-1" || req.ParentPageID != "page-10" || req.Subject != "제목" || req.Body.Content != "본문" || req.Body.MimeType != "text/html" {
+		if wikiID != "wiki-1" || req.ParentPageID != "page-10" || req.Subject != "제목" || req.Body.Content != "본문" || req.Body.MimeType != "text/html" || len(req.AttachFileIDs) != 1 || req.AttachFileIDs[0] != "attachment-1" || len(req.Referrers) != 1 || req.Referrers[0].Member.OrganizationMemberID != "member-1" {
 			t.Errorf("create payload wiki=%s req=%+v", wikiID, req)
 		}
 		res := &wikimodel.CreatePageResponse{RawJSON: `{"id":"new"}`}
@@ -134,6 +134,7 @@ func TestWikiCreatePage(t *testing.T) {
 	result, err := s.ListTools()["dooray_wiki_page_post"].Handler(ctx, mcp.CallToolRequest{Params: mcp.CallToolParams{Arguments: map[string]any{
 		"operation": "create_page", "wikiId": "wiki-1", "parentPageId": "page-10",
 		"subject": "제목", "content": "본문", "mimeType": "text/html",
+		"attachFileIds": []any{"attachment-1"}, "referrerMemberIds": []any{"member-1"},
 	}}})
 	if err != nil || result == nil || result.IsError || result.Content[0].(mcp.TextContent).Text != `{"id":"new"}` {
 		t.Fatalf("create: %+v %v", result, err)
