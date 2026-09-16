@@ -38,6 +38,96 @@ Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도�
 
 반복 일정은 `daily / weekly / monthly / yearly` 주기, interval, 종료일, 요일/일자 지정까지 지원합니다.
 
+## 이렇게 활용할 수 있습니다
+
+MCP 클라이언트는 한 번의 요청을 처리하면서 여러 Dooray 도구를 순서대로 호출할 수 있습니다. 단순 조회뿐 아니라 조회한 결과를 바탕으로 일정·업무·위키·메신저 작업을 이어서 처리할 수 있습니다.
+
+### 아침 업무 브리핑
+
+현재 시각을 기준으로 오늘 일정과 마감이 가까운 업무를 모아 우선순위를 정리합니다.
+
+```text
+오늘 일정과 이번 주까지 마감인 내 업무를 확인해서, 지금 해야 할 일 순서로 정리해 줘.
+```
+
+사용 도구: `os` → `dooray_calendar_calendars` → `dooray_calendar_events` → `dooray_project` → `dooray_posts`
+
+### 회의 일정 조율과 참석 안내
+
+안내할 멤버를 찾고 내 일정의 빈 시간을 확인한 뒤 일정을 등록합니다. 등록 결과를 확인하고 해당 멤버에게 메신저로 안내할 수도 있습니다.
+
+```text
+김Dooray를 찾아서 내일 오후 일정과 겹치지 않는 30분 회의를 만들고, 회의 시간을 DM으로 알려줘.
+```
+
+사용 도구: `dooray_account_members` → `dooray_account_member` → `dooray_calendar_events` → `dooray_calendar_post_event` → `dooray_messenger`
+
+등록한 일정의 시간·제목·장소가 바뀌면 `dooray_calendar_update_event`, 취소할 때는 `dooray_calendar_delete_event`를 이어서 사용할 수 있습니다.
+
+### 업무 선별과 상세 분석
+
+프로젝트의 업무를 담당자·상태·기한으로 필터링하고, 중요한 업무의 본문과 첨부파일 메타데이터를 확인해 진행 상황이나 위험 요소를 정리합니다.
+
+```text
+Dooray-잘쓰자 프로젝트에서 이번 주 마감인 내 업무를 찾아줘. 그중 진행 중인 업무의 본문과 첨부파일 목록을 확인해서 막힌 점을 요약해 줘.
+```
+
+사용 도구: `dooray_project` → `dooray_posts` → `dooray_post`
+
+### 업무 등록과 담당자 알림
+
+이름으로 멤버 ID를 찾고, 담당자·참조자를 지정한 업무를 만든 다음 생성 결과를 메신저로 알립니다.
+
+```text
+김Dooray를 담당자로 지정해서 "위키 운영 가이드 검토" 업무를 만들고, 생성된 업무 내용을 김Dooray에게 DM으로 보내줘.
+```
+
+사용 도구: `dooray_account_members` → `dooray_project` → `dooray_project_post` → `dooray_messenger`
+
+### 사내 지식 검색과 요약
+
+접근 가능한 위키를 찾고 페이지 계층을 탐색한 뒤 본문, 참조자, 첨부파일을 함께 읽어 필요한 내용을 요약합니다.
+
+```text
+운영 위키에서 장애 대응 절차 페이지를 찾아 본문과 첨부파일을 확인하고 체크리스트로 정리해 줘.
+```
+
+사용 도구: `dooray_wikis` → `dooray_wiki_pages` → `dooray_wiki_page` → `dooray_wiki_page_file_download` 또는 `dooray_wiki_attach_file_download`
+
+### 회의록·가이드 작성과 자료 첨부
+
+문서를 새 페이지로 작성하고 파일을 연결합니다. 위키에 먼저 올린 파일을 새 페이지 생성 시 연결하거나, 만들어진 페이지에 파일을 바로 추가할 수 있습니다.
+
+```text
+오늘 회의 내용을 개발 위키에 회의록 페이지로 만들고, 이 Base64 파일을 참고자료로 첨부해 줘. 마지막에 페이지를 다시 조회해서 본문과 첨부 여부를 확인해 줘.
+```
+
+사용 도구: `dooray_wiki_file_upload` → `dooray_wiki_page_post` → `dooray_wiki_page`, 또는 `dooray_wiki_page_post` → `dooray_wiki_page_file_upload` → `dooray_wiki_page`
+
+작성한 페이지의 제목이나 본문은 `dooray_wiki_page_update`로 보완할 수 있습니다.
+
+### 위키 리뷰와 피드백 반영
+
+페이지 댓글을 모아 검토 의견을 정리하고, 댓글을 등록·수정·삭제하면서 리뷰 과정을 진행합니다. 페이지에 발급된 공유 링크의 상태도 함께 확인할 수 있습니다.
+
+```text
+이 위키 페이지의 댓글과 공유 링크를 확인해 줘. 미해결 의견을 요약하고 "수정 사항을 반영했습니다"라는 댓글을 남겨줘.
+```
+
+사용 도구: `dooray_wiki_comments` → `dooray_wiki_comment` → `dooray_wiki_comment_post` / `dooray_wiki_comment_update` / `dooray_wiki_comment_delete` → `dooray_wiki_shared_links`
+
+### 위키 구조와 접근 대상 정리
+
+문서 구조가 바뀌었을 때 페이지를 다른 부모 아래로 이동하고 참조자 목록을 교체합니다. 더 이상 필요 없는 첨부파일이나 페이지도 정리할 수 있습니다.
+
+```text
+이 페이지를 "완료된 프로젝트" 아래로 옮기고 참조자를 지정한 멤버들로 교체해 줘. 삭제하기 전에는 현재 페이지와 첨부파일을 먼저 보여줘.
+```
+
+사용 도구: `dooray_wiki_page` → `dooray_wiki_page_move` → `dooray_wiki_page_referrers_update`; 정리가 필요하면 `dooray_wiki_page_file_delete` 또는 `dooray_wiki_page_delete`
+
+삭제·메시지 전송·일정 및 업무 등록처럼 Dooray 데이터를 변경하는 요청에는 대상과 내용을 구체적으로 적는 것이 좋습니다. 예를 들어 “방금 조회한 일정 중 ID가 …인 일정만 삭제해 줘”처럼 요청하면 다른 항목을 잘못 변경할 가능성을 줄일 수 있습니다.
+
 ## 설치하기
 
 ### Homebrew (macOS / Linux)
