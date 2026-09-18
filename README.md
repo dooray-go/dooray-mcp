@@ -11,6 +11,10 @@ Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도�
 | 분류 | 기능 | 관련 도구 |
 |------|------|-----------|
 | 메신저 | 다른 멤버에게 DM 전송 | `dooray_messenger` |
+| 메신저 | 참여 중인 채널 조회·채널 생성 | `dooray_messenger_channels`, `dooray_messenger_channel` |
+| 메신저 | 채널 멤버 참여·퇴장 | `dooray_messenger_channel_members` |
+| 메신저 | 채널 메시지 전송·수정·삭제·답글 | `dooray_messenger_channel_message`, `dooray_messenger_channel_log` |
+| 메신저 | 새 메시지 또는 기존 메시지에서 스레드 생성 | `dooray_messenger_channel_thread` |
 | 캘린더 | 내 캘린더 목록 조회 | `dooray_calendar_calendars` |
 | 캘린더 | 기간별 일정 조회 | `dooray_calendar_events` |
 | 캘린더 | 일정 등록 (종일/반복일정 지원) | `dooray_calendar_post_event` |
@@ -63,6 +67,36 @@ MCP 클라이언트는 한 번의 요청을 처리하면서 여러 Dooray 도구
 사용 도구: `dooray_account_members` → `dooray_account_member` → `dooray_calendar_events` → `dooray_calendar_post_event` → `dooray_messenger`
 
 등록한 일정의 시간·제목·장소가 바뀌면 `dooray_calendar_update_event`, 취소할 때는 `dooray_calendar_delete_event`를 이어서 사용할 수 있습니다.
+
+### 프로젝트 협업 채널 개설
+
+프로젝트 참여자를 찾고 전용 채널을 만든 뒤 첫 안내 메시지를 전송합니다. 프로젝트 도중 참여자가 바뀌면 같은 채널에 멤버를 추가하거나 내보낼 수 있습니다.
+
+```text
+김Dooray와 이Dooray의 멤버 ID를 찾아 "신규 기능 출시 준비" 비공개 채널을 만들고, 출시 체크리스트를 공유하는 첫 메시지를 보내줘.
+```
+
+사용 도구: `dooray_account_members` → `dooray_messenger_channel` → `dooray_messenger_channel_message`; 참여자 변경 시 `dooray_messenger_channel_members`
+
+### 장애·이슈 대응 대화 구성
+
+관련 업무와 위키 문서를 확인하고 참여 중인 메신저 채널을 찾은 뒤, 대응 메시지를 게시합니다. 세부 조사는 스레드로 분리해 대화의 맥락을 유지할 수 있습니다.
+
+```text
+참여 중인 프로젝트에서 진행 중인 긴급 업무를 찾고 장애 대응 위키 페이지도 확인해서 요약해 줘. 운영 채널을 찾아 요약을 게시하고, 로그 분석 항목은 별도 스레드로 시작해 줘.
+```
+
+사용 도구: `dooray_project` → `dooray_posts` → `dooray_post` → `dooray_wikis` → `dooray_wiki_pages` → `dooray_wiki_page` → `dooray_messenger_channels` → `dooray_messenger_channel_message` → `dooray_messenger_channel_thread`
+
+### 공지 정정과 후속 답변
+
+채널에 보낸 메시지의 `channelId`와 `logId`를 이용해 잘못된 내용을 수정하거나 삭제하고, 특정 메시지에 답글을 남깁니다.
+
+```text
+방금 채널에 보낸 공지의 배포 시간을 오후 4시로 고쳐줘. 원문에는 변경 사유를 답글로 남겨줘.
+```
+
+사용 도구: `dooray_messenger_channel_message` → `dooray_messenger_channel_log`; 독립적인 후속 논의가 필요하면 `dooray_messenger_channel_thread`
 
 ### 업무 선별과 상세 분석
 
@@ -345,6 +379,73 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 | operation | O | `send` |
 | to | O | 수신자의 organizationMemberId |
 | message | O | 보낼 메시지 본문 |
+
+### 메신저 채널 조회·생성
+
+| 도구 | operation | 설명 |
+|------|-----------|------|
+| `dooray_messenger_channels` | `find_channels` | 내가 참여 중인 채널 목록 조회 |
+| `dooray_messenger_channel` | `create_channel` | 채널 생성 |
+
+채널 생성 파라미터:
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| idType | O | `email` 또는 `member-id`. `memberIds`의 식별자 종류 |
+| type | O | `direct` 또는 `private` |
+| memberIds | O | 채널에 포함할 이메일 또는 organizationMemberId 문자열 배열 |
+| capacity | X | 채널 정원. Dooray API에 문자열로 전달 |
+| title | X | 채널 제목 |
+
+`create_channel` 응답의 `result.id`가 이후 작업에 사용하는 `channelId`입니다. `find_channels`는 별도 검색·페이지 파라미터 없이 참여 중인 전체 채널을 반환합니다.
+
+### `dooray_messenger_channel_members`
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `join_members` 또는 `leave_members` |
+| channelId | O | 대상 채널 ID |
+| memberIds | O | 참여 또는 퇴장시킬 organizationMemberId 문자열 배열 |
+
+### `dooray_messenger_channel_message`
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `send_message` |
+| channelId | O | 메시지를 보낼 채널 ID |
+| text | O | 메시지 본문 |
+
+응답의 `result.id`는 메시지의 `logId`, `result.channelId`는 채널 ID입니다. 수정·삭제·답글·기존 메시지에서 스레드 생성 시 이 두 값을 사용합니다.
+
+### `dooray_messenger_channel_log`
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `update_log`, `delete_log`, `reply_log` 중 하나 |
+| channelId | O | 대상 채널 ID |
+| logId | O | 대상 메시지 ID |
+| text | 조건부 | 수정하거나 답글로 보낼 본문. `delete_log`에는 사용하지 않음 |
+
+### `dooray_messenger_channel_thread`
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `create_thread` 또는 `create_thread_from_log` |
+| channelId | O | 대상 채널 ID |
+| text | O | 새 루트 메시지 또는 기존 메시지에서 시작할 스레드 메시지 |
+| threadText | X | `create_thread`에서 루트 메시지와 함께 보낼 첫 스레드 메시지 |
+| logId | 조건부 | `create_thread_from_log`의 대상 메시지 ID |
+
+스레드 생성 응답의 `result.channelId`는 요청에 사용한 채널 ID와 다를 수 있습니다. 응답의 `result.channelId`와 `result.id`를 각각 후속 작업의 `channelId`와 `logId`로 사용하세요.
+
+```json
+{
+  "operation": "create_thread_from_log",
+  "channelId": "3986497069711082184",
+  "logId": "3986497071236383013",
+  "text": "이 항목의 원인을 스레드에서 분석하겠습니다."
+}
+```
 
 ### `dooray_calendar_calendars`
 
@@ -665,7 +766,7 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 
 ### 의존성
 
-* [github.com/dooray-go/dooray-sdk](https://github.com/dooray-go/dooray-sdk) — Dooray OpenAPI Go 클라이언트 (v0.8.0)
+* [github.com/dooray-go/dooray-sdk](https://github.com/dooray-go/dooray-sdk) — Dooray OpenAPI Go 클라이언트 (v0.9.0)
 * [github.com/mark3labs/mcp-go](https://github.com/mark3labs/mcp-go) — MCP 서버 SDK
 
 ### 디렉터리 구조
@@ -675,7 +776,7 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 ├── cmd/dooray-mcp/          # MCP 서버 진입점
 ├── internal/account/        # 멤버 조회 도구
 ├── internal/calendar/       # 캘린더 조회·등록·수정·삭제
-├── internal/messenger/      # 메신저 DM 도구
+├── internal/messenger/      # 메신저 DM·채널·메시지·스레드 도구
 ├── internal/ostool/         # 현재 시각 도구 (`os`)
 ├── internal/project/        # 프로젝트·업무 도구
 ├── internal/wiki/           # 위키 페이지·댓글·첨부파일·공유 링크 도구
