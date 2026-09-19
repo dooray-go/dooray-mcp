@@ -8,3 +8,5 @@ dist/
 /dooray_mcp
 .mcp.json
 .dooray-token
+.env
+.omc/
