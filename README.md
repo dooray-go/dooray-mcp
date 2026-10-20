@@ -14,6 +14,7 @@ Dooray! 를 Claude 등 MCP 호환 AI 클라이언트에서 사용할 수 있도�
 | 메신저 | 참여 중인 채널 조회·채널 생성 | `dooray_messenger_channels`, `dooray_messenger_channel` |
 | 메신저 | 채널 멤버 참여·퇴장 | `dooray_messenger_channel_members` |
 | 메신저 | 채널 메시지 전송·수정·삭제·답글 | `dooray_messenger_channel_message`, `dooray_messenger_channel_log` |
+| 메신저 | 채널 최근 메시지 조회 | `dooray_messenger_channel_logs` |
 | 메신저 | 새 메시지 또는 기존 메시지에서 스레드 생성 | `dooray_messenger_channel_thread` |
 | 캘린더 | 내 캘린더 목록 조회 | `dooray_calendar_calendars` |
 | 캘린더 | 기간별 일정 조회 | `dooray_calendar_events` |
@@ -425,6 +426,16 @@ Dooray-잘쓰자 프로젝트에 "MCP 업무 등록 테스트" 업무를 만들�
 | channelId | O | 대상 채널 ID |
 | logId | O | 대상 메시지 ID |
 | text | 조건부 | 수정하거나 답글로 보낼 본문. `delete_log`에는 사용하지 않음 |
+
+### `dooray_messenger_channel_logs`
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| operation | O | `find_logs` |
+| channelId | O | 대상 채널 ID. 스레드 채널 ID도 사용 가능 |
+| size | X | 가져올 최근 메시지 수. 1~1000, 기본 50 |
+
+공식 문서에 없는 `GET /messenger/v1/channels/{channelId}/logs`를 호출합니다. 최근 `size`건만 반환하고 페이징을 지원하지 않아 그 이전 메시지는 조회할 수 없습니다.
 
 ### `dooray_messenger_channel_thread`
 
