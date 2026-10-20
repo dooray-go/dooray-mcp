@@ -22,11 +22,12 @@ type calls struct {
 	reply         func(context.Context, string, string, string, string) (*mm.SendMessageResponse, error)
 	thread        func(context.Context, string, string, mm.CreateAndSendThreadRequest) (*mm.SendMessageResponse, error)
 	threadFromLog func(context.Context, string, string, string, string) (*mm.SendMessageResponse, error)
+	logs          func(context.Context, string, string, int) (*logsResponse, error)
 }
 
 func Tools(s *server.MCPServer, token *string) {
 	c := ms.NewDefaultMessenger()
-	register(s, token, calls{c.DirectSendContext, c.GetChannelsContext, c.CreateChannelContext, c.JoinChannelMembersContext, c.LeaveChannelMembersContext, c.SendMessageContext, c.UpdateChannelLogContext, c.DeleteChannelLogContext, c.ReplyChannelLogContext, c.CreateAndSendThreadContext, c.CreateAndSendThreadFromLogContext})
+	register(s, token, calls{c.DirectSendContext, c.GetChannelsContext, c.CreateChannelContext, c.JoinChannelMembersContext, c.LeaveChannelMembersContext, c.SendMessageContext, c.UpdateChannelLogContext, c.DeleteChannelLogContext, c.ReplyChannelLogContext, c.CreateAndSendThreadContext, c.CreateAndSendThreadFromLogContext, fetchChannelLogs})
 }
 
 func register(s *server.MCPServer, token *string, c calls) {
@@ -147,6 +148,7 @@ func register(s *server.MCPServer, token *string, c calls) {
 	})
 	addLog(s, token, c)
 	addThread(s, token, c)
+	addLogs(s, token, c)
 }
 
 func addLog(s *server.MCPServer, t *string, c calls) {
